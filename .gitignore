@@ -1,0 +1,12 @@
+# Logs
+*.log
+
+# Dotenv
+.env
+!.env.example
+
+# GoMod
+/vendor
+
+# IDE
+.idea
