@@ -3,9 +3,9 @@ package infrastructure
 import (
 	"database/sql"
 	"fmt"
+	"github.com/ParentTV/kit/auth"
+	"github.com/ParentTV/kit/event_bus"
 	_ "github.com/go-sql-driver/mysql"
-	"kit/auth"
-	"kit/event_bus"
 	"log"
 	"os"
 )

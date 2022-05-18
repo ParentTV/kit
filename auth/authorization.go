@@ -1,6 +1,6 @@
 package auth
 
-import "kit/event_bus"
+import "github.com/ParentTV/kit/event_bus"
 
 type Auth struct {
 	eb *event_bus.EventBus
