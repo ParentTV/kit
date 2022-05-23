@@ -34,9 +34,9 @@ func (e *EventBus) Subscribe(topic string, handler subscriptionHandler) {
 
 func (e *EventBus) Publish(topic string, data interface{}) {
 	b, _ := json.Marshal(data)
-	fmt.Println(fmt.Sprintf("publishing to topic %s: %v", topic, data))
 	h := nats.Header{}
 	h.Set("service", e.queue)
+	fmt.Println(fmt.Sprintf("publishing to topic %s: %v", topic, string(b)))
 	err := e.conn.PublishMsg(&nats.Msg{Header: h, Data: b, Subject: topic})
 	if err != nil {
 		fmt.Println("publish error: " + err.Error())

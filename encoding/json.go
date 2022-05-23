@@ -1,7 +1,6 @@
 package encoding
 
 import (
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -16,18 +15,28 @@ type JsonData struct {
 }
 
 func ParseJsonData(r *http.Request) JsonData {
-	err := headerCheck("application/json", r)
+	b, err, code := ParseJsonBody(r)
 	if err != nil {
-		return JsonData{Error: err, ErrorCode: http.StatusUnsupportedMediaType}
+		return JsonData{Error: err, ErrorCode: code}
 	}
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return JsonData{Error: err, ErrorCode: http.StatusBadRequest}
-	}
+	p, q := ExtractParams(r)
 	jsonData := JsonData{
-		Params: mux.Vars(r),
-		Query:  r.URL.Query(),
 		Data:   b,
+		Params: p,
+		Query:  q,
 	}
 	return jsonData
+}
+
+func ParseJsonBody(r *http.Request) (b []byte, err error, code int) {
+	defer r.Body.Close()
+	err = headerCheck("application/json", r)
+	if err != nil {
+		return b, err, http.StatusUnsupportedMediaType
+	}
+	b, err = ioutil.ReadAll(r.Body)
+	if err != nil {
+		return b, err, http.StatusBadRequest
+	}
+	return b, nil, http.StatusOK
 }

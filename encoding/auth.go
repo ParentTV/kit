@@ -3,9 +3,14 @@ package encoding
 import "net/http"
 
 type Auth struct {
-	User string
+	User     string
+	Password string
 }
 
 func ParseAuthHeader(r *http.Request) Auth {
-	return Auth{}
+	u, p, ok := r.BasicAuth()
+	if !ok {
+		return Auth{}
+	}
+	return Auth{u, p}
 }
