@@ -25,6 +25,8 @@ type StandardRequest struct {
 	Params        map[string]string
 	Query         url.Values
 	Data          []byte
+	PerPage       int64
+	Page          int64
 }
 
 func NewStandardRequest(r *http.Request) StandardRequest {

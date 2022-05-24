@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/ParentTV/kit/event_bus"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,7 @@ import (
 type Auth struct {
 	eb         *event_bus.EventBus
 	url        string
-	authstring string
+	authString string
 }
 
 func NewAuth(eb *event_bus.EventBus) *Auth {
@@ -20,20 +21,34 @@ func NewAuth(eb *event_bus.EventBus) *Auth {
 	return &Auth{eb, os.Getenv("AUTH_SERVICE_URL"), "Basic " + a}
 }
 
+func (a *Auth) Login(user, pass string) string {
+	var b []byte
+	as := base64.StdEncoding.EncodeToString([]byte(user + ":" + pass))
+	resp := a.login(a.url, as)
+	defer resp.Body.Close()
+	b, _ = ioutil.ReadAll(resp.Body)
+	return string(b)
+
+}
+
 func (a *Auth) IsAuthorized(id string, perm string) bool {
-	reqUrl := fmt.Sprintf("%s?id=%s&perm=%s", a.url, id, perm)
-	req, err := http.NewRequest("GET", reqUrl, nil)
+	url := fmt.Sprintf("%s/%s?perm=%s", a.url, id, perm)
+	return a.login(url, a.authString).StatusCode == 200
+}
+
+func (a *Auth) login(url, authString string) *http.Response {
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Println("Error on request.\n[ERROR] -", err)
 	}
 	// add authorization header to the req
-	req.Header.Add("Authorization", a.authstring)
+	req.Header.Add("Authorization", authString)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error on response.\n[ERROR] -", err)
 	}
-	return resp.StatusCode == 200
+	return resp
 }
 
 func (a *Auth) RegisterPermissions(perms []string) {
