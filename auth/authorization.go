@@ -4,11 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/ParentTV/kit/encoding"
 	"github.com/ParentTV/kit/event_bus"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type User struct {
@@ -24,19 +26,21 @@ type Auth struct {
 	eb         *event_bus.EventBus
 	url        string
 	authString string
+	token      string
 }
 
 func NewAuth(eb *event_bus.EventBus) *Auth {
 	a := base64.StdEncoding.EncodeToString([]byte(os.Getenv("AUTH_SERVICE_USER") + ":" + os.Getenv("AUTH_SERVICE_PASS")))
-	return &Auth{eb, os.Getenv("AUTH_SERVICE_URL"), "Basic " + a}
+	return &Auth{eb: eb, url: os.Getenv("AUTH_SERVICE_URL"), authString: "Basic " + a}
 }
 
 func (a *Auth) Login(user, pass string) (token string) {
 	var b []byte
 	as := base64.StdEncoding.EncodeToString([]byte(user + ":" + pass))
-	resp := a.login(a.url, as)
+	resp := a.get(a.url, as)
 	defer resp.Body.Close()
 	b, _ = ioutil.ReadAll(resp.Body)
+	a.token = string(b)
 	return string(b)
 }
 
@@ -46,7 +50,7 @@ func (a *Auth) IdFromToken(token string) string {
 
 func (a *Auth) IsAuthorized(id string, perm string) bool {
 	url := fmt.Sprintf("%s/users/%s", a.url, id)
-	r := a.login(url, a.authString)
+	r := a.get(url, "Bearer "+a.UseToken())
 	if r == nil {
 		return false
 	}
@@ -65,7 +69,29 @@ func (a *Auth) IsAuthorized(id string, perm string) bool {
 	return false
 }
 
-func (a *Auth) login(url, authString string) *http.Response {
+func (a *Auth) UseToken() string {
+	if a.token == "" {
+		a.token = a.GetToken()
+	}
+	auth := encoding.ParseTokenString(a.token)
+	if auth.Expiry.Before(time.Now()) {
+		a.token = a.GetToken()
+	}
+	return a.token
+}
+
+func (a *Auth) GetToken() string {
+	authlogin := a.url + "/auth"
+	r := a.get(authlogin, a.authString)
+	if r == nil {
+		return ""
+	}
+	defer r.Body.Close()
+	b, _ := ioutil.ReadAll(r.Body)
+	return string(b)
+}
+
+func (a *Auth) get(url, authString string) *http.Response {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Println("Error on request.\n[ERROR] -", err)
