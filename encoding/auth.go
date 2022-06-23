@@ -21,6 +21,7 @@ func ParseAuthHeader(r *http.Request) Auth {
 	}
 	return Auth{User: u, Password: p}
 }
+
 func ParseToken(r *http.Request) Auth {
 	reqToken := r.Header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer ")

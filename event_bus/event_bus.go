@@ -42,7 +42,7 @@ func (n *NATSEvent) GetCorrelationId() string  { return n.correlationId }
 type subscriptionHandler func(topic string, event Msg) error
 
 func NewEventBus(queue string) *EventBus {
-	conn, err := nats.Connect(nats.DefaultURL)
+	conn, err := nats.Connect("nats://nats:4222")
 	if err != nil {
 		logError("initialising", "", err, "", "")
 		panic(err)
