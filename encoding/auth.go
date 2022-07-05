@@ -12,6 +12,7 @@ type Auth struct {
 	User     string
 	Password string
 	Expiry   time.Time
+	Error    error
 }
 
 func ParseAuthHeader(r *http.Request) Auth {
@@ -39,7 +40,7 @@ func ParseTokenString(t string) Auth {
 	})
 	if err != nil || !token.Valid {
 		fmt.Println("invalid token")
-		return Auth{}
+		return Auth{Error: err}
 	}
 	claims, _ := token.Claims.(jwt.MapClaims)
 	exp := int64(claims["exp"].(float64))
