@@ -139,5 +139,6 @@ func log(action, topic string, data []byte, or, cor string) {
 }
 
 func logError(action, topic string, err error, or, cor string) {
-	log(action, topic, []byte(err.Error()), or, cor)
+	berr, _ := json.Marshal(map[string]string{"error": err.Error()})
+	log(action, topic, berr, or, cor)
 }
