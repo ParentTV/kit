@@ -28,7 +28,6 @@ func Setup() (*sql.DB, *event_bus.EventBus, *auth.Auth) {
 		dbPort,
 		dbName,
 	)
-	fmt.Println(dsn)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatalln(err)
