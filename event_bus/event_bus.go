@@ -47,7 +47,8 @@ func NewEventBus(queue string) *EventBus {
 		logError("initialising", "", err, "", "")
 		panic(err)
 	}
-	fmt.Println("connected to NATs")
+	b, _ := json.Marshal(map[string]string{queue: "connected to NATs"})
+	log("initialising", "", b, "", "")
 	return &EventBus{conn: conn, queue: queue}
 }
 
