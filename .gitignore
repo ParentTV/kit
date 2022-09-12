@@ -10,3 +10,7 @@
 
 # IDE
 .idea
+
+go.sum
+
+common_adapters/tests/
