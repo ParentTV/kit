@@ -102,7 +102,7 @@ func (e *EventBus) subscribe(topic string, handler func(string, Msg) error) {
 func (e *EventBus) queueSubscribe(topic string, handler func(string, Msg) error) {
 	_, err := e.conn.QueueSubscribe(topic, e.queue, func(m *nats.Msg) {
 		log("queue receive", m.Subject, m.Data, m.Header.Get("origin"), m.Header.Get("correlation_id"))
-		err := handler(topic, Msg{Header: m.Header, Data: m.Data})
+		err := handler(m.Subject, Msg{Header: m.Header, Data: m.Data})
 		if err != nil {
 			logError("queue receive error", m.Subject, err, m.Header.Get("origin"), m.Header.Get("correlation_id"))
 			return
