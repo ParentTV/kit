@@ -20,6 +20,7 @@ type User struct {
 	Email       string   `json:"email"`
 	Password    string   `json:"password"`
 	Permissions []string `json:"permissions"`
+	LicenseKey  string   `json:"license_key"`
 }
 
 type Auth struct {
@@ -49,26 +50,36 @@ func (a *Auth) IdFromToken(token string) string {
 }
 
 func (a *Auth) IsAuthorized(id string, perm string) bool {
-	url := fmt.Sprintf("%s/users/%s", a.url, id)
-	r := a.get(url, "Bearer "+a.UseToken())
-	if r == nil {
-		return false
-	}
-	defer r.Body.Close()
-	b, _ := ioutil.ReadAll(r.Body)
-	var u User
-	err := json.Unmarshal(b, &u)
-	if err != nil {
-		return false
-	}
-	for _, v := range u.Permissions {
-		if perm == v {
-			return true
+	if u, ok := a.getUser(id); ok {
+		for _, v := range u.Permissions {
+			if perm == v {
+				return true
+			}
 		}
 	}
 	return false
 }
 
+func (a *Auth) HasLicense(id string, license string) bool {
+	if u, ok := a.getUser(id); ok {
+		return u.LicenseKey == license
+	}
+	return false
+}
+
+func (a *Auth) getUser(id string) (User, bool) {
+	var u User
+	url := fmt.Sprintf("%s/users/%s", a.url, id)
+	r := a.get(url, "Bearer "+a.UseToken())
+	if r == nil {
+		return u, false
+	}
+	defer r.Body.Close()
+	b, _ := ioutil.ReadAll(r.Body)
+
+	err := json.Unmarshal(b, &u)
+	return u, err != nil
+}
 func (a *Auth) UseToken() string {
 	if a.token == "" {
 		a.token = a.GetToken()
