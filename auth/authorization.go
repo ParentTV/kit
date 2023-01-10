@@ -70,7 +70,7 @@ func (a *Auth) IsAuthorized(id string, perm string) bool {
 			}
 		}
 	}
-	fmt.Println(fmt.Sprintf("permission %s not found for user %s", perm, id)
+	fmt.Println(fmt.Sprintf("permission %s not found for user %s", perm, id))
 	return false
 }
 
