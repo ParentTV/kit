@@ -70,6 +70,7 @@ func (a *Auth) IsAuthorized(id string, perm string) bool {
 			}
 		}
 	}
+	fmt.Println(fmt.Sprintf("permission %s not found for user %s", perm, id)
 	return false
 }
 
@@ -89,12 +90,16 @@ func (a *Auth) getUser(id string) (User, bool) {
 	}
 	r := a.get(url, auth)
 	if r == nil {
+		fmt.Println(fmt.Sprintf("user %s not found", id))
 		return u, false
 	}
 	defer r.Body.Close()
 	b, _ := ioutil.ReadAll(r.Body)
 
 	err := json.Unmarshal(b, &u)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("error unmarshalling user data: %s", err.Error()))
+	}
 	return u, err != nil
 }
 func (a *Auth) UseToken() string {
