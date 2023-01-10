@@ -24,15 +24,17 @@ type User struct {
 }
 
 type Auth struct {
-	eb         *event_bus.EventBus
-	url        string
-	authString string
-	token      string
+	eb            *event_bus.EventBus
+	url           string
+	authString    string
+	apiAuthString string
+	token         string
 }
 
 func NewAuth(eb *event_bus.EventBus) *Auth {
 	a := base64.StdEncoding.EncodeToString([]byte(os.Getenv("AUTH_SERVICE_USER") + ":" + os.Getenv("AUTH_SERVICE_PASS")))
-	return &Auth{eb: eb, url: os.Getenv("AUTH_SERVICE_URL"), authString: "Basic " + a}
+	api := base64.StdEncoding.EncodeToString([]byte(os.Getenv("PTV_API_KEY") + ":" + os.Getenv("PTV_API_SECRET")))
+	return &Auth{eb: eb, url: os.Getenv("AUTH_SERVICE_URL"), authString: "Basic " + a, apiAuthString: "Basic " + api}
 }
 
 func (a *Auth) Login(user, pass string) (token string) {
@@ -42,6 +44,17 @@ func (a *Auth) Login(user, pass string) (token string) {
 	defer resp.Body.Close()
 	b, _ = ioutil.ReadAll(resp.Body)
 	a.token = string(b)
+	return string(b)
+}
+
+func (a *Auth) ThirdPartySignIn(licenseKey, uid string) string {
+	url := fmt.Sprintf("%s/tps/%s/%s", a.url, licenseKey, uid)
+	r := a.get(url, a.apiAuthString)
+	if r == nil {
+		return ""
+	}
+	defer r.Body.Close()
+	b, _ := ioutil.ReadAll(r.Body)
 	return string(b)
 }
 
@@ -70,7 +83,11 @@ func (a *Auth) HasLicense(id string, license string) bool {
 func (a *Auth) getUser(id string) (User, bool) {
 	var u User
 	url := fmt.Sprintf("%s/users/%s", a.url, id)
-	r := a.get(url, "Bearer "+a.UseToken())
+	auth := a.apiAuthString
+	if a.apiAuthString == "" {
+		auth = "Bearer " + a.UseToken()
+	}
+	r := a.get(url, auth)
 	if r == nil {
 		return u, false
 	}
@@ -92,8 +109,15 @@ func (a *Auth) UseToken() string {
 }
 
 func (a *Auth) GetToken() string {
-	authlogin := a.url + "/auth"
-	r := a.get(authlogin, a.authString)
+	authPath := "/auth"
+	authString := a.authString
+	if a.apiAuthString != "" {
+		authPath = "/api-auth"
+		authString = a.apiAuthString
+	}
+
+	authlogin := a.url + authPath
+	r := a.get(authlogin, authString)
 	if r == nil {
 		return ""
 	}

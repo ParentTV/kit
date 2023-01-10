@@ -39,7 +39,7 @@ func ParseTokenString(t string) Auth {
 		return []byte(secretKey), nil
 	})
 	if err != nil || !token.Valid {
-		fmt.Println("invalid token")
+		fmt.Println("invalid token:", t)
 		return Auth{Error: err}
 	}
 	claims, _ := token.Claims.(jwt.MapClaims)
