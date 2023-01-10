@@ -7,7 +7,6 @@ import (
 	"github.com/ParentTV/kit/encoding"
 	"github.com/ParentTV/kit/event_bus"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -101,7 +100,7 @@ func (a *Auth) getUser(id string) (User, bool) {
 	if err != nil {
 		fmt.Println(fmt.Sprintf("error unmarshalling user data: %s", err.Error()))
 	}
-	return u, err != nil
+	return u, err == nil
 }
 func (a *Auth) UseToken() string {
 	if a.token == "" {
@@ -135,14 +134,14 @@ func (a *Auth) GetToken() string {
 func (a *Auth) get(url, authString string) *http.Response {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Println("Error on request.\n[ERROR] -", err)
+		fmt.Println("Error on request.\n[ERROR] -", err.Error())
 	}
 	// add authorization header to the req
 	req.Header.Add("Authorization", authString)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
+		fmt.Println("Error on response.\n[ERROR] -", err.Error())
 		return nil
 	}
 	return resp
