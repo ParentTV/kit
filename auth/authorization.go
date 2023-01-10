@@ -64,13 +64,14 @@ func (a *Auth) IdFromToken(token string) string {
 
 func (a *Auth) IsAuthorized(id string, perm string) bool {
 	if u, ok := a.getUser(id); ok {
+		fmt.Println(fmt.Sprintf("permission check for user %v", u))
 		for _, v := range u.Permissions {
 			if perm == v {
 				return true
 			}
 		}
 	}
-	fmt.Println(fmt.Sprintf("permission %s not found for user %s", perm, id))
+	fmt.Println(fmt.Sprintf("permission %s not found for user %v", perm, id))
 	return false
 }
 
