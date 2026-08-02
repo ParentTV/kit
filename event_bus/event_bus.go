@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nats-io/nats.go"
+	"os"
 	"time"
 )
 
@@ -42,7 +43,11 @@ func (n *NATSEvent) GetCorrelationId() string  { return n.correlationId }
 type subscriptionHandler func(topic string, event Msg) error
 
 func NewEventBus(queue string) *EventBus {
-	conn, err := nats.Connect("nats://nats:4222")
+	natsURL := os.Getenv("NATS_URL")
+	if natsURL == "" {
+		natsURL = "nats://nats:4222"
+	}
+	conn, err := nats.Connect(natsURL)
 	if err != nil {
 		logError("initialising", "", err, "", "")
 		panic(err)
