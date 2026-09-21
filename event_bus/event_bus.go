@@ -47,7 +47,20 @@ func NewEventBus(queue string) *EventBus {
 	if natsURL == "" {
 		natsURL = "nats://nats:4222"
 	}
-	conn, err := nats.Connect(natsURL)
+	// Reconnect forever. The nats.go default gives up after 60 attempts
+	// (~2 minutes), after which the connection is closed for good and a
+	// long-running consumer keeps running while receiving nothing.
+	conn, err := nats.Connect(natsURL,
+		nats.MaxReconnects(-1),
+		nats.ReconnectWait(2*time.Second),
+		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
+			logError("nats disconnected", "", err, "", "")
+		}),
+		nats.ReconnectHandler(func(c *nats.Conn) {
+			b, _ := json.Marshal(map[string]string{queue: "reconnected to NATs at " + c.ConnectedUrl()})
+			log("nats reconnected", "", b, "", "")
+		}),
+	)
 	if err != nil {
 		logError("initialising", "", err, "", "")
 		panic(err)
@@ -55,6 +68,13 @@ func NewEventBus(queue string) *EventBus {
 	b, _ := json.Marshal(map[string]string{queue: "connected to NATs"})
 	log("initialising", "", b, "", "")
 	return &EventBus{conn: conn, queue: queue}
+}
+
+// Connected reports whether the underlying NATS connection is currently
+// established. False while reconnecting or after a permanent close - the
+// signal a liveness check needs to get a stuck consumer replaced.
+func (e *EventBus) Connected() bool {
+	return e.conn != nil && e.conn.IsConnected()
 }
 
 func (e *EventBus) NewEvent() Event {
