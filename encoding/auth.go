@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"net/http"
@@ -34,15 +35,21 @@ func ParseToken(r *http.Request) Auth {
 }
 
 func ParseTokenString(t string) Auth {
-	secretKey := "5f2b5cdbe5194f10b3241568fe4e2b24"
+	secretKey := jwtSecret()
 	token, err := jwt.Parse(t, func(t *jwt.Token) (interface{}, error) {
-		return []byte(secretKey), nil
+		return tokenKey(t, secretKey)
 	})
 	if err != nil || !token.Valid {
-		fmt.Println("invalid token:", t)
+		fmt.Println("invalid token:", err)
 		return Auth{Error: err}
 	}
 	claims, _ := token.Claims.(jwt.MapClaims)
-	exp := int64(claims["exp"].(float64))
-	return Auth{User: claims["sub"].(string), Expiry: time.Unix(exp, 0)}
+	sub, _ := claims["sub"].(string)
+	exp, _ := claims["exp"].(float64)
+	if sub == "" {
+		err = errors.New("token has no subject")
+		fmt.Println("invalid token:", err)
+		return Auth{Error: err}
+	}
+	return Auth{User: sub, Expiry: time.Unix(int64(exp), 0)}
 }
